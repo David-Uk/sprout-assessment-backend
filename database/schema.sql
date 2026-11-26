@@ -1,0 +1,4 @@
+-- Schema entry point. Modules are applied in the order listed below.
+-- @include schema/001_tasks_table.sql
+-- @include schema/002_tasks_index.sql
+-- @include schema/003_query_reference.sql

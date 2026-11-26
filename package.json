@@ -1,0 +1,39 @@
+{
+  "name": "sprout-assessment-backend",
+  "version": "0.0.0",
+  "private": true,
+  "description": "Express API backed by Neon Lakebase Postgres",
+  "main": "src/server.js",
+  "scripts": {
+    "start": "node src/server.js",
+    "dev": "node --watch src/server.js",
+    "build": "node --check src/config.js && node --check src/db.js && node --check src/app.js && node --check src/server.js && node --check src/utils/app-error.js && node --check src/models/sql-builder.js && node --check src/models/task.model.js && node --check src/services/task.service.js && node --check src/views/response.view.js && node --check src/controllers/task.controller.js && node --check src/controllers/health.controller.js && node --check src/controllers/docs.controller.js && node --check src/routes/task.routes.js && node --check src/routes/health.routes.js && node --check src/routes/docs.routes.js && node --check src/views/docs.view.js && node --check src/middleware/error.middleware.js && node --check src/middleware/validate.middleware.js && node --check scripts/sql-loader.js && node --check scripts/init-db.js && node --check scripts/seed-db.js",
+    "db:init": "node scripts/init-db.js",
+    "db:seed": "node scripts/seed-db.js",
+    "test": "mocha",
+    "test:coverage": "c8 mocha",
+    "lint": "node ./node_modules/eslint/bin/eslint.js src scripts test",
+    "lint:fix": "node ./node_modules/eslint/bin/eslint.js src scripts test --fix"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "dependencies": {
+    "@neon/config": "^1.14.8",
+    "@neon/env": "^2.1.11",
+    "cors": "^2.8.6",
+    "dotenv": "^16.4.7",
+    "express": "^4.21.2",
+    "express-rate-limit": "^8.7.5",
+    "helmet": "^8.3.0",
+    "morgan": "^1.12.1",
+    "pg": "^8.13.1"
+  },
+  "devDependencies": {
+    "c8": "^12.0.0",
+    "chai": "^4.5.0",
+    "chai-http": "^4.4.0",
+    "eslint": "^10.15.0",
+    "mocha": "^11.8.0"
+  }
+}

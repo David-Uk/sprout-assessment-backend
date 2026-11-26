@@ -1,0 +1,8 @@
+{
+  "all": true,
+  "include": ["src/**/*.js"],
+  "exclude": ["src/server.js", "test/**"],
+  "reporter": ["text", "html", "lcov"],
+  "reportsDirectory": "coverage",
+  "check-coverage": false
+}

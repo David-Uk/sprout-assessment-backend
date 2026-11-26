@@ -1,0 +1,12 @@
+-- Query reference used by the API (all user values are passed as parameters).
+-- 1. List tasks, optionally filtered by status, newest first:
+--    SELECT id, title, description, status, created_at FROM tasks
+--    WHERE ($1::text IS NULL OR status = $1) ORDER BY created_at DESC;
+-- 2. Insert a task and return the created row:
+--    INSERT INTO tasks (title, description, status) VALUES ($1, $2, $3)
+--    RETURNING id, title, description, status, created_at;
+-- 3. Update status by id and return the updated row (no row => 404):
+--    UPDATE tasks SET status = $1, updated_at = now() WHERE id = $2
+--    RETURNING id, title, status, updated_at;
+-- 4. Find a single task by id:
+--    SELECT id, title, description, status, created_at FROM tasks WHERE id = $1;

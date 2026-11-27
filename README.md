@@ -60,9 +60,16 @@ If you are not using Neon, copy `.env.example` to `.env` and set your own values
 | `PORT` | HTTP port, default `3000` |
 | `NODE_ENV` | `development`, `test`, or `production` |
 | `DB_POOL_MAX` | Maximum `pg` pool size, default `10` |
+| `CORS_ORIGIN` | Allowed frontend origin(s), comma-separated; defaults to `http://localhost:5173` |
 
 TLS is enabled automatically when the connection host is a Neon host. `.env.local` is loaded before
 `.env`, so it takes precedence when both exist.
+
+In development (`NODE_ENV=development`), any `http://localhost:<port>` or
+`http://127.0.0.1:<port>` origin is also allowed. Vite silently moves to the next free port when
+5173 is busy (5174, 5175, …), so a strict single-port allow-list would cause the client's requests
+to be blocked by CORS and surfaced as "API unreachable". Production and test use only the explicit
+`CORS_ORIGIN` list.
 
 ## 3. Apply the database scripts
 
@@ -129,7 +136,8 @@ the test database URLs supplied through environment variables.
 
 ## API reference (Scalar)
 
-With the API running, open **http://localhost:3000/docs** for the interactive Scalar reference. It
+With the API running, open **http://localhost:3000/docs** (or the index route **/**, which redirects
+there) for the interactive Scalar reference. It
 is generated from the OpenAPI 3.1 document served at **`/docs/openapi.json`** (source file:
 `docs/openapi.json`) and covers every endpoint, request/response schema and error shape, with
 examples and a built-in request client. The page loads the Scalar bundle from jsDelivr, so viewing
@@ -141,6 +149,38 @@ it requires internet access.
 `.nvmrc`, npm dependency caching and a Postgres 16 service container. The steps are `npm ci`,
 `npm run lint`, `npm run build`, `npm run db:init` and `npm test`. The database URLs are throwaway
 local values declared in the workflow — no GitHub Secrets are needed.
+
+## Deployment (Vercel)
+
+The API is deployed at **https://sprout-assessment-backend.vercel.app**. The Vercel project
+`sprout-assessment-backend` is linked to this repository (`.vercel/` is gitignored) and uses
+Vercel's zero-configuration Express detection — `src/app.js` exports the Express app, so no
+`vercel.json`, build command or output directory is needed.
+
+| Variable | Value | Notes |
+|---|---|---|
+| `DATABASE_URL` | Neon pooled connection string | Stored as a Vercel Secret; never commit it |
+| `CORS_ORIGIN` | `https://sprout-assessment-frontend.vercel.app` | Change this if the client is hosted elsewhere; trailing slashes are stripped |
+| `DB_POOL_MAX` | `3` | Keeps the per-function pool small; Neon's pooler handles concurrency |
+
+`NODE_ENV=production` is set by Vercel automatically. In production only the explicit
+`CORS_ORIGIN` list is trusted; development additionally allows any `localhost` port.
+
+Deploy from the CLI (uploads the current files and builds on Vercel's Linux builders):
+
+```bash
+vercel deploy --prod --yes
+```
+
+Local `vercel build` on Windows requires Developer Mode or an elevated shell because the CLI
+creates symlinks in its build cache; the remote build path above avoids that. Pushes to the linked
+GitHub repository also create deployments, but only committed changes are included. `.vercelignore`
+excludes `.env*`, `node_modules`, coverage data and tests from uploads.
+
+Deployment Protection (Vercel Authentication) is disabled because this is a public, unauthenticated
+API. Point the deployed client at `https://sprout-assessment-backend.vercel.app/api` via
+`VITE_API_BASE_URL`. Any additional deployed client origin must be added to `CORS_ORIGIN` with
+`vercel env add CORS_ORIGIN --environment production --force`.
 
 ## API summary
 

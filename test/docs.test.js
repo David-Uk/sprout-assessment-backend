@@ -5,6 +5,12 @@ const { expect } = chai;
 const app = require('../src/app');
 
 describe('API documentation', () => {
+  it('redirects the index route to the API reference', async () => {
+    const res = await chai.request(app).get('/').redirects(0);
+    expect(res).to.have.status(302);
+    expect(res).to.have.header('location', '/docs');
+  });
+
   it('serves the Scalar reference page', async () => {
     const res = await chai.request(app).get('/docs');
     expect(res).to.have.status(200);
@@ -18,7 +24,7 @@ describe('API documentation', () => {
     const res = await chai.request(app).get('/docs/openapi.json');
     expect(res).to.have.status(200);
     expect(res.body.openapi).to.equal('3.1.0');
-    expect(res.body.paths).to.include.all.keys('/health', '/api/tasks', '/api/tasks/{id}/status');
+    expect(res.body.paths).to.include.all.keys('/', '/health', '/api/tasks', '/api/tasks/{id}/status');
     expect(res.body.components.schemas.Status.enum).to.deep.equal([
       'pending',
       'in_progress',

@@ -10,16 +10,20 @@ const AppError = require('./utils/app-error');
 const taskRoutes = require('./routes/task.routes');
 const healthRoutes = require('./routes/health.routes');
 const docsRoutes = require('./routes/docs.routes');
+const docsController = require('./controllers/docs.controller');
 const { notFound, errorHandler } = require('./middleware/error.middleware');
 
 const app = express();
 
 app.disable('x-powered-by');
+// Vercel terminates TLS at its edge proxy. Trust that hop so rate limiting
+// sees the client IP rather than the proxy's address.
+if (config.nodeEnv === 'production') app.set('trust proxy', 1);
 app.use(helmet());
 app.use(
   cors({
     origin(origin, callback) {
-      if (!origin || config.corsOrigins.includes(origin)) return callback(null, true);
+      if (config.isAllowedOrigin(origin)) return callback(null, true);
       return callback(new AppError('FORBIDDEN', 'Origin not allowed', 403));
     },
     methods: ['GET', 'POST', 'PATCH', 'OPTIONS'],
@@ -40,6 +44,7 @@ const apiLimiter = rateLimit({
   legacyHeaders: false,
 });
 
+app.get('/', docsController.redirect);
 app.use('/health', healthRoutes);
 app.use('/api/tasks', apiLimiter, taskRoutes);
 app.use('/docs', docsRoutes);

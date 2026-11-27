@@ -31,7 +31,41 @@ The SQL scripts and CI configuration live in **this** repository, not in the cli
 npm ci
 ```
 
-## 2. Connect the project to Neon
+## 2. Create a Neon database and connect the project
+
+### 2.1 Create a Neon account and database (first time)
+
+1. **Create an account.** Go to [console.neon.tech](https://console.neon.tech) and sign up with an
+   email address, GitHub or Google. Verify your email if prompted. The free tier is enough for this
+   project.
+2. **Create a project.** In the Console, go to **Organization → Projects → New project**. Give it a
+   name (e.g. `sprout-assessment`), pick a region close to you or your users and a Postgres version,
+   then create it. Neon creates a default branch called `production` containing a database named
+   `neondb` and a role named `neondb_owner` — that database is fine to use as-is. To use a different
+   name, open the SQL editor and run `CREATE DATABASE sprout_tasks;` (or use **Databases → New
+   database**), then select that database in the Connect modal below.
+3. **Create a separate test branch.** Go to **Branches → New branch**, name it `test`, branch it from
+   `production` and create it. Tests must never run against production data. With the CLI, the
+   equivalent is `neon branches create --name test --parent production --no-secrets`.
+4. **Get the connection strings.** Click **Connect** in the Console nav. Choose the branch
+   (`production`), compute, database and role. With **Connection pooling** on, copy the *pooled*
+   string — its hostname contains `-pooler`. Turn pooling off (or remove `-pooler`) for the *direct*
+   string. Repeat with the `test` branch to get its two strings. A pooled URL looks like
+   `postgresql://role:password@ep-...-pooler.region.aws.neon.tech/neondb?sslmode=require&channel_binding=require`.
+   The CLI equivalents are `neon connection-string production --pooled` (pooled),
+   `neon connection-string production` (direct), and the same with `test` as the branch name.
+   The URL encodes the role, password, host and database name; use **Reset password** in the Console
+   if you do not know the role's password. Treat these strings as passwords — never commit them.
+5. **Put the strings in the env files.** Copy `.env.example` to `.env` and set `DATABASE_URL` to the
+   pooled production string and `DATABASE_URL_UNPOOLED` to the direct production string. Copy
+   `.env.test.example` to `.env.test` and set `DATABASE_URL_TEST` to the pooled test string and
+   `DATABASE_URL_TEST_UNPOOLED` to its direct string. The table below maps every field. On Vercel,
+   set `DATABASE_URL` to the pooled production string (see [Deployment](#deployment-vercel)).
+
+The `neon init` commands below are only needed to reuse the already-linked project in this
+repository; skip them if you created your own project and filled in the env files yourself.
+
+### 2.2 Use the already-linked project
 
 The repo is already linked via `.neon` and declares its services in `neon.ts`. To reproduce the
 setup in a fresh clone:
@@ -53,14 +87,19 @@ If you are not using Neon, copy `.env.example` to `.env` and set your own values
 
 ### Environment variables
 
-| Variable | Used for |
-|---|---|
-| `DATABASE_URL` | Pooled connection string used by the running API (`src/db.js`) |
-| `DATABASE_URL_UNPOOLED` | Direct connection string used by schema/seed scripts |
-| `PORT` | HTTP port, default `3000` |
-| `NODE_ENV` | `development`, `test`, or `production` |
-| `DB_POOL_MAX` | Maximum `pg` pool size, default `10` |
-| `CORS_ORIGIN` | Allowed frontend origin(s), comma-separated; defaults to `http://localhost:5173` |
+| Variable | Set it in | What to put there |
+|---|---|---|
+| `DATABASE_URL` | `.env`, Vercel (all environments) | **Pooled** Neon URL for `production` (hostname ends in `-pooler`). Used by `src/db.js` for every app query, including `/health`. |
+| `DATABASE_URL_UNPOOLED` | `.env` | **Direct** Neon URL for `production` (no `-pooler`). Used only by `npm run db:init` / `db:seed` for DDL. |
+| `DATABASE_URL_TEST` | `.env.test`, CI env | **Pooled** URL of the `test` branch. `test/setup.js` injects it as `DATABASE_URL` before the app is loaded. |
+| `DATABASE_URL_TEST_UNPOOLED` | `.env.test`, CI env | **Direct** URL of the `test` branch, used by the schema helper that resets tables between tests. |
+| `NODE_ENV` | `.env` (`development`), `.env.test`/CI (`test`) | `development`, `test` or `production`; controls dev CORS and request logging. Vercel sets `production` itself. |
+| `PORT` | `.env` | Local HTTP port, default `3000`. Ignored on Vercel. |
+| `CORS_ORIGIN` | `.env`, Vercel | Comma-separated frontend origin(s): `http://localhost:5173` locally, `https://sprout-assessment-frontend.vercel.app` deployed. A trailing slash is stripped automatically. |
+| `DB_POOL_MAX` | `.env`, Vercel | Maximum `pg` connections per process; default `10`, set to `3` on Vercel to keep serverless pools small. |
+| `POSTGRES_USER`, `POSTGRES_PASSWORD`, `POSTGRES_DB`, `DB_PORT` | `.env` (Docker Compose only) | Credentials for the optional local container in `docker-compose.yml`. Leave these out when using Neon. |
+| `LOG_LEVEL`, `RATE_LIMIT_WINDOW_MS`, `RATE_LIMIT_MAX` | `.env` | Tuning placeholders; `config.js` currently uses fixed values, so changing them has no effect yet. |
+| `NEON_BRANCH`, `NEON_BRANCH_ID` | pulled by `neon env pull` | Neon CLI context only; the API does not read them. |
 
 TLS is enabled automatically when the connection host is a Neon host. `.env.local` is loaded before
 `.env`, so it takes precedence when both exist.

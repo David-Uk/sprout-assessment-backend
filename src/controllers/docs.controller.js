@@ -3,6 +3,10 @@
 const spec = require('../../docs/openapi.json');
 const docsView = require('../views/docs.view');
 
+function redirect(_req, res) {
+  res.redirect(302, '/docs');
+}
+
 function reference(_req, res) {
   // Allow the Scalar bundle and its assets while keeping Helmet's other headers.
   res.setHeader(
@@ -18,4 +22,4 @@ function openapi(_req, res) {
   res.json(spec);
 }
 
-module.exports = { reference, openapi };
+module.exports = { redirect, reference, openapi };

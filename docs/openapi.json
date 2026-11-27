@@ -7,10 +7,21 @@
   },
   "servers": [{ "url": "/", "description": "This server" }],
   "tags": [
+    { "name": "Documentation", "description": "Interactive API reference" },
     { "name": "Health", "description": "Liveness and database readiness" },
     { "name": "Tasks", "description": "Create, list and update tasks" }
   ],
   "paths": {
+    "/": {
+      "get": {
+        "tags": ["Documentation"],
+        "summary": "Redirect to the API reference",
+        "description": "Redirects to the Scalar reference page at /docs.",
+        "responses": {
+          "302": { "description": "Redirect to /docs" }
+        }
+      }
+    },
     "/health": {
       "get": {
         "tags": ["Health"],
